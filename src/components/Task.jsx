@@ -1,85 +1,57 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns'; // Для отображения времени, прошедшего с момента создания задачи
 
 function Task({
-  id,
-  description,
-  createdAt,
-  completed,
-  isEditing,
-  onToggleTask,
-  onRemoveTask,
-  onEditTask,
-  onSaveTask,
-  onCancelEdit,
-  minutes,
-  seconds,
+  id, // Уникальный идентификатор задачи
+  description, // Описание задачи
+  createdAt, // Время создания задачи
+  completed, // Статус выполнения задачи (выполнена или нет)
+  isEditing, // Флаг редактирования задачи
+  isRunning, // Состояние таймера (работает/не работает)
+  elapsedTime, // Время, прошедшее с начала
+  onToggleTask, // Функция для переключения состояния задачи (выполнена/не выполнена)
+  onRemoveTask, // Функция для удаления задачи
+  onEditTask, // Функция для начала редактирования задачи
+  onSaveTask, // Функция для сохранения редактированной задачи
+  onCancelEdit, // Функция для отмены редактирования
+  onToggleTimer, // Функция для старта/паузы таймера
+  onResetTimer, // Функция для сброса времени таймера
 }) {
-  const [timeLabel, setTimeLabel] = useState('');
+  // Состояние для редактируемого описания задачи
   const [editedDescription, setEditedDescription] = useState(description);
 
-  const [timerMinutes, setTimerMinutes] = useState(minutes);
-  const [timerSeconds, setTimerSeconds] = useState(seconds);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isCountingUp, setIsCountingUp] = useState(minutes === 0 && seconds === 0);
-
-  // Загружаем состояние таймера из localStorage при монтировании
-  useEffect(() => {
-    const savedTime = JSON.parse(localStorage.getItem('timerState'));
-    if (savedTime && savedTime.id === id) {
-      setTimerMinutes(savedTime.minutes);
-      setTimerSeconds(savedTime.seconds);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    let timerInterval;
-    if (isRunning && !completed) {
-      timerInterval = setInterval(() => {
-        if (isCountingUp) {
-          setTimerSeconds((prevSeconds) => {
-            if (prevSeconds === 59) {
-              setTimerMinutes((prevMinutes) => prevMinutes + 1);
-              return 0;
-            }
-            return prevSeconds + 1;
-          });
-        } else {
-          if (timerMinutes === 0 && timerSeconds === 0) {
-            setIsRunning(false);
-            return;
-          }
-          if (timerSeconds === 0) {
-            setTimerMinutes((prevMinutes) => prevMinutes - 1);
-            setTimerSeconds(59);
-          } else {
-            setTimerSeconds((prevSeconds) => prevSeconds - 1);
-          }
-        }
-      }, 1000);
-    } else {
-      clearInterval(timerInterval);
-    }
-    return () => clearInterval(timerInterval);
-  }, [isRunning, isCountingUp, timerMinutes, timerSeconds, completed]);
-
-  // Сохраняем состояние таймера в localStorage при изменении времени
-  useEffect(() => {
-    if (isRunning) {
-      const timerState = {
-        id,
-        minutes: timerMinutes,
-        seconds: timerSeconds,
-      };
-      localStorage.setItem('timerState', JSON.stringify(timerState));
-    }
-  }, [id, timerMinutes, timerSeconds, isRunning]);
-
-  const handlePlayPause = () => {
-    setIsRunning(!isRunning);
+  // Форматируем время (минуты:секунды)
+  const formatTime = (elapsedTime) => {
+    const minutes = Math.floor(elapsedTime / 60);
+    const seconds = elapsedTime % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
+  // Обновление времени при каждом изменении
+  const handleToggleTimer = () => onToggleTimer(id); // Переключение состояния таймера
+  const handleResetTimer = () => onResetTimer(id); // Сброс времени
+
+  // Сохранение редактируемой задачи
+  const handleSave = () => {
+    if (editedDescription.trim()) {
+      onSaveTask(id, editedDescription.trim());
+    }
+  };
+
+  // Обработчик изменения текста в поле ввода
+  const handleInputChange = (e) => {
+    setEditedDescription(e.target.value);
+  };
+
+  // Обработчик нажатия клавиш в режиме редактирования
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') onCancelEdit(id);
+  };
+
+  // Форматируем метку времени для отображения времени создания задачи
+  const [timeLabel, setTimeLabel] = useState('');
   useEffect(() => {
     const updateTimeLabel = () => {
       const timeDifference = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
@@ -95,37 +67,30 @@ function Task({
     return () => clearInterval(intervalId);
   }, [createdAt]);
 
-  const handleSave = () => {
-    if (editedDescription.trim()) {
-      onSaveTask(id, editedDescription.trim());
-    }
-  };
-
-  const handleInputChange = (e) => {
-    setEditedDescription(e.target.value);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSave();
-    if (e.key === 'Escape') onCancelEdit(id);
-  };
-
   return (
     <li className={`${completed ? 'completed' : ''} ${isEditing ? 'editing' : ''}`}>
       <div className="view">
-        <input className="toggle" type="checkbox" checked={completed} onChange={() => onToggleTask(id)} />
+        <input
+          className="toggle"
+          type="checkbox"
+          checked={completed}
+          onChange={() => onToggleTask(id)}
+          onClick={handleResetTimer}
+        />
         {!isEditing ? (
           <>
             <label>
               <span className="description">{description}</span>
               <span className="description">
-                <button className={`icon ${isRunning ? 'icon-pause' : 'icon-play'}`} onClick={handlePlayPause}></button>
-                {String(timerMinutes).padStart(2, '0')}:{String(timerSeconds).padStart(2, '0')}
+                <button className={`icon icon-${isRunning ? 'pause' : 'play'}`} onClick={handleToggleTimer}></button>
+                {formatTime(elapsedTime)}
               </span>
-              <span className="created">{timeLabel}</span>
+              <span className="description">{timeLabel}</span>
+
+              <button className="icon icon-edit" onClick={() => onEditTask(id)}></button>
+              <button className="icon icon-destroy" onClick={() => onRemoveTask(id)}></button>
             </label>
-            <button className="icon icon-edit" onClick={() => onEditTask(id)}></button>
-            <button className="icon icon-destroy" onClick={() => onRemoveTask(id)}></button>
+            {/*<button className="icon icon-reset" onClick={handleResetTimer}></button>*/}
           </>
         ) : (
           <input
@@ -143,18 +108,20 @@ function Task({
 }
 
 Task.propTypes = {
-  id: PropTypes.number.isRequired, // Уникальный идентификатор задачи
-  description: PropTypes.string.isRequired, // Описание задачи
-  createdAt: PropTypes.instanceOf(Date).isRequired, // Время создания задачи (должно быть экземпляром Date)
-  completed: PropTypes.bool.isRequired, // Статус задачи (выполнена или нет)
-  isEditing: PropTypes.bool.isRequired, // Флаг редактирования задачи
-  onToggleTask: PropTypes.func.isRequired, // Функция для переключения состояния задачи
-  onRemoveTask: PropTypes.func.isRequired, // Функция для удаления задачи
-  onEditTask: PropTypes.func.isRequired, // Функция для начала редактирования задачи
-  onSaveTask: PropTypes.func.isRequired, // Функция для сохранения редактированной задачи
-  onCancelEdit: PropTypes.func.isRequired, // Функция для отмены редактирования
-  minutes: PropTypes.number.isRequired, // Проп для минут
-  seconds: PropTypes.number.isRequired, // Проп для секунд
+  id: PropTypes.number.isRequired,
+  description: PropTypes.string.isRequired,
+  createdAt: PropTypes.instanceOf(Date).isRequired,
+  completed: PropTypes.bool.isRequired,
+  isEditing: PropTypes.bool.isRequired,
+  isRunning: PropTypes.bool.isRequired,
+  elapsedTime: PropTypes.number.isRequired,
+  onToggleTask: PropTypes.func.isRequired,
+  onRemoveTask: PropTypes.func.isRequired,
+  onEditTask: PropTypes.func.isRequired,
+  onSaveTask: PropTypes.func.isRequired,
+  onCancelEdit: PropTypes.func.isRequired,
+  onToggleTimer: PropTypes.func.isRequired,
+  onResetTimer: PropTypes.func.isRequired,
 };
 
 export default Task;
