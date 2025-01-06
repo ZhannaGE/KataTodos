@@ -5,14 +5,9 @@ import TasksFilter from './TasksFilter';
 function Footer({ tasksLeft, onClearCompleted, currentFilter, onFilterChange }) {
   return (
     <footer className="footer">
-      {/* Отображаем количество оставшихся задач */}
       <span className="todo-count">{tasksLeft} items left</span>
 
-      {/* Компонент для отображения фильтра задач */}
-      <TasksFilter
-        currentFilter={currentFilter} // Передаем текущий фильтр
-        onFilterChange={onFilterChange} // Передаем функцию для изменения фильтра
-      />
+      <TasksFilter currentFilter={currentFilter} onFilterChange={onFilterChange} />
 
       {/* Кнопка для очистки завершенных задач */}
       <button className="clear-completed" onClick={onClearCompleted}>
@@ -23,10 +18,10 @@ function Footer({ tasksLeft, onClearCompleted, currentFilter, onFilterChange }) 
 }
 
 Footer.propTypes = {
-  tasksLeft: PropTypes.number.isRequired, // Количество оставшихся задач (число)
-  onClearCompleted: PropTypes.func.isRequired, // Функция для очистки завершенных задач
-  currentFilter: PropTypes.string.isRequired, // Текущий фильтр задач ('all', 'active', 'completed')
-  onFilterChange: PropTypes.func.isRequired, // Функция для изменения фильтра задач
+  tasksLeft: PropTypes.number.isRequired,
+  onClearCompleted: PropTypes.func.isRequired,
+  currentFilter: PropTypes.string.isRequired,
+  onFilterChange: PropTypes.func.isRequired,
 };
 
 export default Footer;

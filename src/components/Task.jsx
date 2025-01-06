@@ -1,56 +1,55 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { formatDistanceToNow } from 'date-fns'; // Для отображения времени, прошедшего с момента создания задачи
+import { formatDistanceToNow } from 'date-fns';
 
 function Task({
-  id, // Уникальный идентификатор задачи
-  description, // Описание задачи
-  createdAt, // Время создания задачи
-  completed, // Статус выполнения задачи (выполнена или нет)
-  isEditing, // Флаг редактирования задачи
-  isRunning, // Состояние таймера (работает/не работает)
-  elapsedTime, // Время, прошедшее с начала
-  onToggleTask, // Функция для переключения состояния задачи (выполнена/не выполнена)
-  onRemoveTask, // Функция для удаления задачи
-  onEditTask, // Функция для начала редактирования задачи
-  onSaveTask, // Функция для сохранения редактированной задачи
-  onCancelEdit, // Функция для отмены редактирования
-  onToggleTimer, // Функция для старта/паузы таймера
-  onResetTimer, // Функция для сброса времени таймера
+  id,
+  description,
+  createdAt,
+  completed,
+  isEditing,
+  isRunning,
+  elapsedTime,
+  onToggleTask,
+  onRemoveTask,
+  onEditTask,
+  onSaveTask,
+  onCancelEdit,
+  onToggleTimer,
+  onResetTimer,
 }) {
-  // Состояние для редактируемого описания задачи
   const [editedDescription, setEditedDescription] = useState(description);
 
-  // Форматируем время (минуты:секунды)
   const formatTime = (elapsedTime) => {
     const minutes = Math.floor(elapsedTime / 60);
     const seconds = elapsedTime % 60;
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
-  // Обновление времени при каждом изменении
-  const handleToggleTimer = () => onToggleTimer(id); // Переключение состояния таймера
-  const handleResetTimer = () => onResetTimer(id); // Сброс времени
+  const handleToggleTimer = () => onToggleTimer(id);
+  const handleResetTimer = () => onResetTimer(id);
 
-  // Сохранение редактируемой задачи
   const handleSave = () => {
     if (editedDescription.trim()) {
       onSaveTask(id, editedDescription.trim());
     }
   };
 
-  // Обработчик изменения текста в поле ввода
   const handleInputChange = (e) => {
     setEditedDescription(e.target.value);
   };
 
-  // Обработчик нажатия клавиш в режиме редактирования
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleSave();
     if (e.key === 'Escape') onCancelEdit(id);
   };
 
-  // Форматируем метку времени для отображения времени создания задачи
+  useEffect(() => {
+    if (!isEditing) {
+      setEditedDescription(description);
+    }
+  }, [isEditing, description]);
+
   const [timeLabel, setTimeLabel] = useState('');
   useEffect(() => {
     const updateTimeLabel = () => {
@@ -90,7 +89,6 @@ function Task({
               <button className="icon icon-edit" onClick={() => onEditTask(id)}></button>
               <button className="icon icon-destroy" onClick={() => onRemoveTask(id)}></button>
             </label>
-            {/*<button className="icon icon-reset" onClick={handleResetTimer}></button>*/}
           </>
         ) : (
           <input

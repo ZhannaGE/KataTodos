@@ -9,6 +9,12 @@ function NewTaskForm({ onAddTask }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Проверка на пустое описание задачи
+    if (inputValue.trim() === '') {
+      alert('Task description cannot be empty');
+      return;
+    }
+
     // Если пользователь ничего не ввел, устанавливаем время на 0:00
     const minutes = minute ? parseInt(minute) : 0;
     const seconds = second ? parseInt(second) : 0;
